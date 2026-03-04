@@ -1,0 +1,6 @@
+root: .
+location_include: includes/*.conf
+pushstate: enabled
+http_strict_transport_security: true
+http_strict_transport_security_include_subdomains: true
+force_https: true

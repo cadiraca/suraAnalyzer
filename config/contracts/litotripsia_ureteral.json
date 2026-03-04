@@ -1,0 +1,116 @@
+{
+  "contract_id": "litotripsia_ureteral",
+  "contract_name": "Litotricia Intracorpórea con Láser",
+  "description": "Análisis de elegibilidad para servicio de litotricia ureteral con láser",
+  "version": "2.0",
+  "active": true,
+  "default": true,
+  "eligibility_instructions": "ROLE: Act as 'Sura HC Analyzer' You have always to answer in Spanish. Audit patient eligibility for 'Atención integral de ureteroláser' strictly based on contract terms [cite: 3, 4].\n\nCONTRACT PARAMETERS (HARD CONSTRAINTS):\n- Validity: July 1, 2025 – June 30, 2026 .\n- Geo-Coverage: Jamundí, Cali, Palmira, Buga, Tuluá, Yumbo .\n- Allowed Plans: PBS or PGP [cite: 17].\n- Excluded Levels: Level III (Must be Level I or II)[cite: 13].\n\nDECISION LOGIC (Must pass ALL):\n1. AGE: ≥ 18 years[cite: 11].\n2. LOCATION: Patient resides in Geo-Coverage area[cite: 9, 17].\n3. SURA POLICY CHECK:\n   - IF Plan is PBS/PGP AND No Active Sura Policy → PASS.\n   - IF Active Sura Policy exists → CHECK Authorization Date.\n     - IF Auth Date < Policy Start Date → PASS.\n     - ELSE → FAIL (Exclusion applies).\n4. CLINICAL: Requires 'Litotricia intracorpórea con láser'. No Level III comorbidities[cite: 7, 13].\n\nINSTRUCTIONS:\n- Analyze input documents (History/Auth/ID).\n- Extract data strictly matching schema.\n- If Sura Policy is active, you MUST look for an authorization date.\n- Output ONLY JSON.",
+  "response_schema": {
+    "type": "object",
+    "properties": {
+      "patient_data": {
+        "type": "object",
+        "description": "Datos del paciente extraídos de los documentos",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Nombre completo del paciente"
+          },
+          "age": {
+            "type": "number",
+            "description": "Edad del paciente en años"
+          },
+          "patient_id": {
+            "type": "string",
+            "description": "Número de identificación del paciente"
+          },
+          "insurance_plan": {
+            "type": "string",
+            "description": "Tipo de plan de salud (PBS, PGP, etc.)"
+          },
+          "has_poliza": {
+            "type": "boolean",
+            "description": "Indica si el paciente tiene póliza Sura activa"
+          }
+        },
+        "required": [
+          "name",
+          "age",
+          "patient_id",
+          "insurance_plan"
+        ]
+      },
+      "eligibility_decision": {
+        "type": "string",
+        "enum": [
+          "ELIGIBLE",
+          "NOT_ELIGIBLE",
+          "INSUFFICIENT_INFORMATION"
+        ],
+        "description": "Decisión final de elegibilidad"
+      },
+      "criteria_matrix": {
+        "type": "array",
+        "description": "Evaluación detallada de cada criterio",
+        "items": {
+          "type": "object",
+          "properties": {
+            "criterion": {
+              "type": "string",
+              "description": "Nombre del criterio evaluado (Edad, Ubicación, Plan, Póliza/Auth, Nivel, Servicio)"
+            },
+            "requirement": {
+              "type": "string",
+              "description": "Requisito específico del criterio"
+            },
+            "patient_value": {
+              "type": "string",
+              "description": "Valor encontrado en los documentos del paciente"
+            },
+            "status": {
+              "type": "string",
+              "description": "Estado del criterio: ✓ CUMPLE, ✗ NO CUMPLE, o ? DESCONOCIDO"
+            },
+            "justification": {
+              "type": "string",
+              "description": "Explicación detallada de la evaluación"
+            }
+          },
+          "required": [
+            "criterion",
+            "requirement",
+            "patient_value",
+            "status",
+            "justification"
+          ]
+        }
+      },
+      "observations": {
+        "type": "string",
+        "description": "Análisis detallado del caso con observaciones y recomendaciones [cite: 21, 23]"
+      },
+      "confidence_score": {
+        "type": "number",
+        "description": "Nivel de confianza en la decisión (0.0 a 1.0)",
+        "minimum": 0.0,
+        "maximum": 1.0
+      },
+      "missing_fields": {
+        "type": "array",
+        "description": "Lista de información faltante o documentos adicionales necesarios",
+        "items": {
+          "type": "string"
+        }
+      }
+    },
+    "required": [
+      "patient_data",
+      "eligibility_decision",
+      "criteria_matrix",
+      "observations",
+      "confidence_score",
+      "missing_fields"
+    ]
+  }
+}
