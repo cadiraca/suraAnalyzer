@@ -21,3 +21,6 @@ Thumbs.db
 
 # OpenCode
 .opencode/
+
+# Git worktrees
+.worktrees/
