@@ -13,6 +13,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from src.api.client_manager import ClientManager
+from src.api.sura.pdf_tools_routes import pdf_tools_router
 from src.api.sura.routes import router as sura_router
 from src.api.sura.summarizer_routes import summarizer_router
 
@@ -74,8 +75,10 @@ app.add_middleware(
 # Register SURA routes
 app.include_router(sura_router)
 app.include_router(summarizer_router)
+app.include_router(pdf_tools_router)
 
 logger.info("SURA Healthcare routes registered at /api/v1/sura")
+logger.info("PDF Tools routes registered at /api/v1/pdf-tools")
 
 
 @app.get("/", tags=["Root"])
@@ -88,6 +91,8 @@ async def root():
             "sura_contracts": "/api/v1/sura/contracts",
             "sura_analyze": "/api/v1/sura/analyze-eligibility",
             "sura_summarize": "/api/v1/sura/summarize-clinical",
+            "pdf_compress": "/api/v1/pdf-tools/compress",
+            "pdf_split": "/api/v1/pdf-tools/split",
             "docs": "/docs",
             "openapi": "/openapi.json",
         },

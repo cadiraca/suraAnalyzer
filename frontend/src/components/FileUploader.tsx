@@ -1,5 +1,6 @@
-import { useCallback } from 'react';
+import { useCallback, useState } from 'react';
 import { useDropzone } from 'react-dropzone';
+import type { FileRejection } from 'react-dropzone';
 
 interface FileUploaderProps {
   files: File[];
@@ -8,6 +9,8 @@ interface FileUploaderProps {
 }
 
 export function FileUploader({ files, onFilesChange, disabled }: FileUploaderProps) {
+  const [oversizedFiles, setOversizedFiles] = useState<string[]>([]);
+
   const onDrop = useCallback(
     (acceptedFiles: File[]) => {
       onFilesChange([...files, ...acceptedFiles]);
@@ -15,8 +18,22 @@ export function FileUploader({ files, onFilesChange, disabled }: FileUploaderPro
     [files, onFilesChange]
   );
 
+  const onDropRejected = useCallback((rejections: FileRejection[]) => {
+    const names = rejections
+      .filter((r) => r.errors.some((e) => e.code === 'file-too-large'))
+      .map((r) => r.file.name);
+    if (names.length > 0) {
+      setOversizedFiles((prev) => [...prev, ...names.filter((n) => !prev.includes(n))]);
+    }
+  }, []);
+
+  const dismissOversized = (name: string) => {
+    setOversizedFiles((prev) => prev.filter((n) => n !== name));
+  };
+
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
+    onDropRejected,
     accept: {
       'application/pdf': ['.pdf'],
       'image/png': ['.png'],
@@ -119,6 +136,32 @@ export function FileUploader({ files, onFilesChange, disabled }: FileUploaderPro
               </div>
             ))}
           </div>
+        </div>
+      )}
+
+      {oversizedFiles.length > 0 && (
+        <div className="space-y-2">
+          {oversizedFiles.map((name) => (
+            <div
+              key={name}
+              className="flex items-start justify-between gap-2 rounded-lg bg-amber-50 border border-amber-200 px-4 py-3 text-sm text-amber-800"
+            >
+              <span>
+                ⚠️ El archivo <strong className="font-semibold">{name}</strong> supera el límite de
+                10&nbsp;MB. Usa la pestaña{' '}
+                <strong className="font-semibold">Herramientas PDF</strong> para reducir su tamaño
+                antes de cargarlo.
+              </span>
+              <button
+                type="button"
+                onClick={() => dismissOversized(name)}
+                className="flex-shrink-0 text-amber-600 hover:text-amber-800 font-bold leading-none"
+                title="Cerrar"
+              >
+                ×
+              </button>
+            </div>
+          ))}
         </div>
       )}
     </div>

@@ -1,5 +1,5 @@
-import type { 
-  Contract, 
+import type {
+  Contract,
   SSEInitEvent,
   SSEAnalyzingEvent,
   SSEResultEvent,
@@ -43,12 +43,12 @@ export function analyzeEligibility(
   handlers: SSEHandlers
 ): () => void {
   const formData = new FormData();
-  
+
   // Add files
   files.forEach((file) => {
     formData.append('files', file);
   });
-  
+
   // Add contract_id if specified
   if (contractId) {
     formData.append('contract_id', contractId);
@@ -83,7 +83,7 @@ export function analyzeEligibility(
 
       while (true) {
         const { done, value } = await reader.read();
-        
+
         if (done) break;
 
         buffer += decoder.decode(value, { stream: true });
@@ -97,12 +97,12 @@ export function analyzeEligibility(
 
           if (line.startsWith('data:')) {
             const data = line.substring(5).trim();
-            
+
             if (!data) continue;
 
             try {
               const parsed = JSON.parse(data);
-              
+
               // Handle different event types
               if (parsed.contract_id) {
                 handlers.onInit?.(parsed as SSEInitEvent);
@@ -249,4 +249,87 @@ export function summarizeClinical(
   return () => {
     abortController.abort();
   };
+}
+
+// ---------------------------------------------------------------------------
+// PDF Tools API
+// ---------------------------------------------------------------------------
+
+export interface CompressPdfResult {
+  blob: Blob;
+  filename: string;
+  originalSize: number;
+  compressedSize: number;
+}
+
+/** Compress a PDF by re-encoding its embedded images at a lower JPEG quality. */
+export async function compressPdf(file: File, quality: number): Promise<CompressPdfResult> {
+  const formData = new FormData();
+  formData.append('file', file);
+  formData.append('quality', String(quality));
+
+  const response = await fetch(`${API_BASE_URL}/api/v1/pdf-tools/compress`, {
+    method: 'POST',
+    body: formData,
+  });
+
+  if (!response.ok) {
+    let detail = `HTTP ${response.status}`;
+    try {
+      const body = await response.json();
+      detail = body.detail || detail;
+    } catch {
+      // ignore parse error
+    }
+    throw new Error(`Error al comprimir el PDF: ${detail}`);
+  }
+
+  const blob = await response.blob();
+
+  // Extract sizes from response headers (set by backend)
+  const originalSize = Number(response.headers.get('X-Original-Size') ?? file.size);
+  const compressedSize = Number(response.headers.get('X-Compressed-Size') ?? blob.size);
+
+  // Derive filename from Content-Disposition or construct from original
+  const disposition = response.headers.get('Content-Disposition') ?? '';
+  const match = disposition.match(/filename="?([^"]+)"?/);
+  const filename = match ? match[1] : `compressed_${file.name}`;
+
+  return { blob, filename, originalSize, compressedSize };
+}
+
+export interface SplitPdfResult {
+  blob: Blob;
+  filename: string;
+}
+
+/** Split a PDF into chunks of pagesPerChunk pages, returned as a ZIP archive. */
+export async function splitPdf(file: File, pagesPerChunk: number): Promise<SplitPdfResult> {
+  const formData = new FormData();
+  formData.append('file', file);
+  formData.append('pages_per_chunk', String(pagesPerChunk));
+
+  const response = await fetch(`${API_BASE_URL}/api/v1/pdf-tools/split`, {
+    method: 'POST',
+    body: formData,
+  });
+
+  if (!response.ok) {
+    let detail = `HTTP ${response.status}`;
+    try {
+      const body = await response.json();
+      detail = body.detail || detail;
+    } catch {
+      // ignore parse error
+    }
+    throw new Error(`Error al dividir el PDF: ${detail}`);
+  }
+
+  const blob = await response.blob();
+
+  const disposition = response.headers.get('Content-Disposition') ?? '';
+  const match = disposition.match(/filename="?([^"]+)"?/);
+  const filename = match ? match[1] : `split_${file.name.replace('.pdf', '')}.zip`;
+
+  return { blob, filename };
 }

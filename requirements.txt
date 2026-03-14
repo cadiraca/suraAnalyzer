@@ -1,5 +1,5 @@
 # Core dependencies for SAP Generative AI Hub SDK
-sap-ai-sdk-gen[all]>=5.8.0
+sap-ai-sdk-gen[all]==5.8.0
 
 # Environment and configuration management
 python-dotenv>=1.0.0
@@ -17,6 +17,9 @@ httpx>=0.25.0
 # CLI and utilities
 click>=8.0.0
 rich>=13.0.0
+
+# PDF manipulation
+PyMuPDF>=1.24.0
 
 # Development dependencies (optional)
 pytest>=7.0.0

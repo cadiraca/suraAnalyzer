@@ -1,9 +1,10 @@
 import { useState } from 'react';
 import { EligibilityAnalyzer } from './EligibilityAnalyzer';
 import { ClinicalSummarizer } from './ClinicalSummarizer';
+import { PdfTools } from './PdfTools';
 import { cn } from '../lib/utils';
 
-type ActiveModule = 'eligibility' | 'summarizer';
+type ActiveModule = 'eligibility' | 'summarizer' | 'pdf-tools';
 
 export function AppShell() {
   const [activeModule, setActiveModule] = useState<ActiveModule>('eligibility');
@@ -18,6 +19,11 @@ export function AppShell() {
       key: 'summarizer',
       label: 'Resumen Clinico',
       description: 'Resumen cronologico de documentos',
+    },
+    {
+      key: 'pdf-tools',
+      label: 'Herramientas PDF',
+      description: 'Comprimir y dividir archivos PDF',
     },
   ];
 
@@ -66,6 +72,7 @@ export function AppShell() {
       <main className="container mx-auto px-4 py-8 max-w-6xl">
         {activeModule === 'eligibility' && <EligibilityAnalyzer />}
         {activeModule === 'summarizer' && <ClinicalSummarizer />}
+        {activeModule === 'pdf-tools' && <PdfTools />}
       </main>
 
       {/* Footer */}
