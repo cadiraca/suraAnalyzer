@@ -37,6 +37,13 @@ from src.api.utils import (
 
 logger = logging.getLogger(__name__)
 
+
+def _write_temp_file(path: str, data: bytes) -> None:
+    """Write bytes to a file (used via asyncio.to_thread to avoid blocking)."""
+    with open(path, "wb") as f:
+        f.write(data)
+
+
 summarizer_router = APIRouter(prefix="/api/v1/sura", tags=["SURA Clinical Summarizer"])
 
 
@@ -130,9 +137,8 @@ async def summarize_clinical_stream(
                 )
                 temp_files.append(temp_file_path)
 
-                with open(temp_file_path, "wb") as buffer:
-                    content = await file.read()
-                    buffer.write(content)
+                content = await file.read()
+                await asyncio.to_thread(_write_temp_file, temp_file_path, content)
 
                 # Detect MIME type
                 mime_type = get_mime_type(temp_file_path)
@@ -156,8 +162,10 @@ async def summarize_clinical_stream(
                     yield f"event: error\ndata: {error_event.model_dump_json()}\n\n"
                     return
 
-                # Encode to base64
-                base64_data = encode_file_to_base64(temp_file_path, mime_type)
+                # Encode to base64 (offload to thread since it reads from disk)
+                base64_data = await asyncio.to_thread(
+                    encode_file_to_base64, temp_file_path, mime_type
+                )
 
                 # Add to parts list
                 file_parts.append(
